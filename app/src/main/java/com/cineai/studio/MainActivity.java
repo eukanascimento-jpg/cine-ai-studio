@@ -48,9 +48,12 @@ public class MainActivity extends Activity {
     MediaCodec codec=MediaCodec.createEncoderByType("video/avc");codec.configure(fmt,null,null,MediaCodec.CONFIGURE_FLAG_ENCODE);
     Surface surface=codec.createInputSurface();codec.start();MediaMuxer mux=new MediaMuxer(output.getAbsolutePath(),MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4);
     MediaCodec.BufferInfo info=new MediaCodec.BufferInfo();int track=-1;boolean started=false;
+    Bitmap frameBitmap = Bitmap.createBitmap(w,h,Bitmap.Config.ARGB_8888);
+    Canvas frameCanvas = new Canvas(frameBitmap);
+    EglEncoder egl = new EglEncoder(surface,w,h);
     try{
       for(int frame=0;frame<duration*fps;frame++){
-        Canvas canvas=surface.lockCanvas(null);scene(canvas,prompt,frame/(float)fps,duration);surface.unlockCanvasAndPost(canvas);
+        scene(frameCanvas,prompt,frame/(float)fps,duration);egl.frame(frameBitmap,((long)frame*1000000000L)/fps);
         for(int attempts=0;attempts<5;attempts++){
           int idx=codec.dequeueOutputBuffer(info,10000);
           if(idx==MediaCodec.INFO_OUTPUT_FORMAT_CHANGED){track=mux.addTrack(codec.getOutputFormat());mux.start();started=true;}
@@ -66,6 +69,6 @@ public class MainActivity extends Activity {
         if(idx==MediaCodec.INFO_OUTPUT_FORMAT_CHANGED&&!started){track=mux.addTrack(codec.getOutputFormat());mux.start();started=true;}
         else if(idx>=0){ByteBuffer buf=codec.getOutputBuffer(idx);if(started&&info.size>0){buf.position(info.offset);buf.limit(info.offset+info.size);mux.writeSampleData(track,buf,info);}eof=(info.flags&MediaCodec.BUFFER_FLAG_END_OF_STREAM)!=0;codec.releaseOutputBuffer(idx,false);}
       }
-    }finally{codec.stop();codec.release();surface.release();if(started)mux.stop();mux.release();}
+    }finally{egl.close();frameBitmap.recycle();codec.stop();codec.release();surface.release();if(started)mux.stop();mux.release();}
   }
 }
