@@ -5,3 +5,5 @@ O GitHub Actions compila o APK em Actions > Compilar APK. Baixe o artefato CINE-
 
 
 Build automático: workflow GitHub Actions em cada push. APK experimental, sem geração de vídeo por IA generativa. Um milhão de linhas não melhora a qualidade ou substitui modelos e GPUs.
+
+Compilação automática solicitada via commit de atualização.
